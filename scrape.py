@@ -1,3 +1,8 @@
+# Original work done by Sally Matson
+# Minor changes made by Emily Dich
+# Overhauled by Kevin Huang
+# Last modified: 4/2/2021
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -14,6 +19,55 @@ from urllib.parse import urlencode
 from webdriver_manager.chrome import ChromeDriverManager
 
 
+
+def handle_element_error(element_getter):
+    '''A decorator made to wrap the code that gets the elements
+    
+    This anticipates all errors that could happen while waiting for an element
+    And prints out some information about the element we were waiting for
+    '''
+    def error_wrapper(*args, **kwargs): # allows arbitrary arguments to be passed in
+        # we pass in arbitrary arguments since element_getter requires lots of parameters
+        element, desc = None, kwargs["desc"] # ensures we have a value to print when exceptions occur
+        try:
+            element, desc = element_getter(*args, **kwargs)
+        except TimeoutException as e:
+            print(type(e), desc)
+        except ElementClickInterceptedException as e:
+            print(type(e), desc)
+        except ElementNotInteractableException:
+            print(type(e), desc)
+        finally:
+            # if we need the desc after... # return element, desc
+            return element
+            
+    return error_wrapper
+
+def new_alumnus():
+    '''Helper to create new alumni dicts
+    '''
+    return {
+        "number" : "",
+        "name" : "",
+        "degrees" : "",
+        "email" : "",
+        "location" : "",
+        "link" : "",
+    }
+    
+
+
+@handle_element_error
+def get_element(element_or_driver, seconds:int, expected_condition, by_search, name:str, desc="element"):
+    '''element_or_driver - main WebDriver object used to browse or the element you are searching from
+        by_search - the By object corresponding to the category of element you seek
+        name - whatever id,.class, xpath is need for that element
+        desc - something helpful for determining what failed...
+    '''
+    # this returns a tuple in case we need to preserve "desc" for future use
+    return WebDriverWait(element_or_driver, seconds).until( expected_condition((by_search, name))), desc
+
+    
 def scrape(query_range, college="harvard college", filename="alumni_emails.csv"):
     '''
     Goes through the directory page by page and gets all available emails (as well as all 
@@ -36,18 +90,7 @@ def scrape(query_range, college="harvard college", filename="alumni_emails.csv")
     cookies=pickle.load(open("cookies.pkl", "rb"))
     for cookie in cookies:
         driver.add_cookie(cookie)
-
-    '''
-    error_file = open('error_tabs', 'a+', newline='')
-    error_writer = csv.writer(error_file)
-
-    no_email_file = open('no-emails.csv', 'a+', newline='')
-    # no_email_writer should be no_email_file
-    no_email_writer = csv.writer(no_email_file)
-
-    email_file = open('emails.csv', 'a+', newline='')
-    email_writer = csv.writer(email_file)
-    '''
+  
     alumni_file = open(filename, "a+", newline='')
     alumni_writer = csv.DictWriter(alumni_file, fieldnames=["name", "degrees", "email", "location", "link"])
     alumni_writer.writeheader()
@@ -70,14 +113,64 @@ def scrape(query_range, college="harvard college", filename="alumni_emails.csv")
             params = "/query?" + urlencode(query_mapping)   
             driver.get("https://community.alumni.harvard.edu" + params)
             
-            cards = WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located(
-                (By.XPATH, 
-                "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
-                )))
+            #cards = WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located(
+            #    (By.XPATH, 
+            #    "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
+            #    )))
 
+            card_xpath = "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
+            seconds = 2 # change seconds back once you're done to 20
+            cards = get_element(driver, seconds, EC.visibility_of_all_elements_located, By.XPATH, card_xpath, desc="profile_cards")
+            print(cards)
+          
             # print(len(cards)) # debug purposes
             
-            for card in cards:
+            # for card in cards:
+            
+            #     alumnus = new_alumnus()
+            #     # keeps track of this person's position in the search parameters
+            
+            #     alumnus["number"] = str(query_range[0] - 1 + alumni_covered)
+           
+            #     anchor = get_element(card, 20, EC.element_to_be_clickable, By.TAG_NAME, "a", desc="user link")[0]
+            #     if anchor:
+            #         alumnus["name"] = anchor.text
+            #         alumnus["link"] = anchor.get_attribute("href")
+
+            #     degrees = get_element(card, 10, EC.element_to_be_clickable, By.CLASS_NAME, "card__degrees", desc="degrees")[0]
+            #     if degrees:
+            #         alumnus["degrees"] = ",".join(degrees.text.split("\n")) 
+
+            #     location = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "current-location", desc="location")[0]
+            #     if location:
+            #         alumnus["location"] = location.text
+
+            #     open_button = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "buttons", desc="email_button")[0]
+                
+            #     if open_button:  
+            #         open_button.click()
+
+            #         modal = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "modal", desc="form")[0]
+            #         close_button = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "close", desc="close_button")[0]
+            #         text = modal.find_element_by_tag_name("dd").text.split('<')
+            #         if close_button:
+            #             close_button.click()
+
+            #         if len(text) == 2:
+            #             email = text[1].strip(">").strip()
+            #             alumnus["email"] = email
+
+            #     alumni_batch.append( alumnus )
+            #     print(f"Alumni {alumni_covered}/{last_person} in college {college}:", [i for i in alumnus if alumnus[i] == ""])
+            #     alumni_covered += 1
+
+            #     if getsizeof(alumni_batch) > 10000:
+            #         print(f"Writing {len(alumni_batch)} to disk!")
+            #         for row in alumni_batch:
+            #             alumni_writer.writerow(row)
+            #             alumni_batch = []
+                
+            '''
                 error = "" # for debugging
                 
                 alumnus = {
@@ -127,20 +220,19 @@ def scrape(query_range, college="harvard college", filename="alumni_emails.csv")
                 except ElementNotInteractableException:
                     error += "element doesn't seem to work"
                 finally:
+                    if error != "":
+                        error += str(alumnus)
 
+                    alumni_batch.append( alumnus )
+                    print(f"Alumni {alumni_covered}/{last_person} in college {college}:", error)
+                    alumni_covered += 1
                 
-                if error != "":
-                    error += str(alumnus)
-
-                alumni_batch.append( alumnus )
-                print(f"Alumni {alumni_covered}/{last_person} in college {college}:", error)
-                alumni_covered += 1
-
-            if getsizeof(alumni_batch) > 100000:
+            if getsizeof(alumni_batch) > 10000:
                 print(f"Writing {len(alumni_batch)} to disk!")
                 for row in alumni_batch:
                     alumni_writer.writerow(row)
                     alumni_batch = []
+            '''
         
         except UnexpectedAlertPresentException:
             print(
@@ -148,34 +240,30 @@ def scrape(query_range, college="harvard college", filename="alumni_emails.csv")
             driver.close()
             break
     
+    
     driver.close()
 
-    for row in alumni_batch:
-        print(f"Writing {len(alumni_batch)} to disk!")
-        alumni_writer.writerow(row)
-        alumni_batch = []
+
+    
+    # for row in alumni_batch:
+    #     print(f"Writing {len(alumni_batch)} to disk!")
+    #     alumni_writer.writerow(row)
+    #     alumni_batch = []
+    
         
-    alumni_file.close()
+    # alumni_file.close()
     
-    
-    
-
- 
-
 
 parser = argparse.ArgumentParser(description='Determine specifics of how to run the script.')
-parser.add_argument('-f', '--filename', type=str, help='File name of CSV to save to')
-parser.add_argument('-c', '--college', type=str, help='Query tab to end at')
-parser.add_argument("query_start", type=str, help='Query tab to start at')
-parser.add_argument("query_end", type=str, help='Query tab to end at')
-
-
+parser.add_argument('-f', '--filename', type=str, help='File name of CSV to save to', default="alumni.csv")
+parser.add_argument('-c', '--college', type=str, help='Query tab to end at. Is inclusive', default="harvard college")
+parser.add_argument("query_start", type=int, help='Query tab to start at')
+parser.add_argument("query_end", type=int, help='Query tab to end at')
 
 if __name__ == "__main__":
-
     args = parser.parse_args()
-    print(args)
-    scrape(range(int(args.query_start), int(args.query_end) + 1, 50), college=args.college, filename=args.filename)
+    interval = range(args.query_start, args.query_end + 1, 50) # guarantees an inclusive range
+    scrape(interval, college=args.college, filename=args.filename)
     
 
     

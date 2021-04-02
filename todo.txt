@@ -6,4 +6,4 @@
 
 
 # exporting the damn thing...
-https://medium.com/featurepreneur/install-python-packages-pip-and-requirements-txt-652cd5e335
+https://medium.com/featurepreneu r/install-python-packages-pip-and-requirements-txt-652cd5e335
