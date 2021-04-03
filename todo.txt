@@ -1,7 +1,7 @@
 # give credit to Emily Dich, "original coder" (ask Nathan)
 # write readme describing how it works and demonstrating how to set up and use it...
-# wrap error checking since I think the "empty" people might be because of errors prematurely ending the processing
 # clean up code
+# change status print outs
 
 
 

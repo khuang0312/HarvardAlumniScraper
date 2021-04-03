@@ -47,15 +47,12 @@ def new_alumnus():
     '''Helper to create new alumni dicts
     '''
     return {
-        "number" : "",
         "name" : "",
         "degrees" : "",
         "email" : "",
         "location" : "",
         "link" : "",
     }
-    
-
 
 @handle_element_error
 def get_element(element_or_driver, seconds:int, expected_condition, by_search, name:str, desc="element"):
@@ -68,7 +65,7 @@ def get_element(element_or_driver, seconds:int, expected_condition, by_search, n
     return WebDriverWait(element_or_driver, seconds).until( expected_condition((by_search, name))), desc
 
     
-def scrape(query_range, college="harvard college", filename="alumni_emails.csv"):
+def scrape(query_start, college="harvard college", filename="alumni_emails.csv"):
     '''
     Goes through the directory page by page and gets all available emails (as well as all 
     without listed emails but with contact ability.)
@@ -76,17 +73,15 @@ def scrape(query_range, college="harvard college", filename="alumni_emails.csv")
     Args:
     query_range: a list with all pages to hit. This number corresponds to the startRow list in the URL.
     '''
-    last_person = query_range[-1] + 50
-    
-
     driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get("https://community.alumni.harvard.edu")
 
     # resetting cookies: uncomment line below (line 29) and comment out following instructions on line 31 
+    # input("Hold to save stuff to disk")
     # pickle.dump( driver.get_cookies() , open("cookies.pkl","wb"))
 
     #if you need to reset cookies, comment out chunk: line starting below with 'cookies' (#32) until line 76 (right before 'driver.close()')
-    #once you double checked cookies.pkl is no longer empty, uncomment the chunk and comment out line 29 then re run script! 
+    # once you double checked cookies.pkl is no longer empty, uncomment the chunk and comment out line 29 then re run script! 
     cookies=pickle.load(open("cookies.pkl", "rb"))
     for cookie in cookies:
         driver.add_cookie(cookie)
@@ -104,166 +99,78 @@ def scrape(query_range, college="harvard college", filename="alumni_emails.csv")
     }
 
     alumni_batch = []
-    alumni_covered = 1
 
-    for query_num in query_range:
-        try:
-            print("Scraping from page row {:>10}".format(query_num))
-            query_mapping["startRow"] = query_num
-            params = "/query?" + urlencode(query_mapping)   
-            driver.get("https://community.alumni.harvard.edu" + params)
+    try:
+        print(f"Scraping from page starting at {query_start}")
+        query_mapping["startRow"] = query_start
+        params = "/query?" + urlencode(query_mapping)   
+        driver.get("https://community.alumni.harvard.edu" + params)
             
-            #cards = WebDriverWait(driver, 20).until(EC.visibility_of_all_elements_located(
-            #    (By.XPATH, 
-            #    "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
-            #    )))
-
-            card_xpath = "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
-            seconds = 2 # change seconds back once you're done to 20
-            cards = get_element(driver, seconds, EC.visibility_of_all_elements_located, By.XPATH, card_xpath, desc="profile_cards")
-            print(cards)
-          
-            # print(len(cards)) # debug purposes
+        card_xpath = "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
+        cards = get_element(driver, 2, EC.visibility_of_all_elements_located, By.XPATH, card_xpath, desc="profile_cards")
             
-            # for card in cards:
-            
-            #     alumnus = new_alumnus()
-            #     # keeps track of this person's position in the search parameters
-            
-            #     alumnus["number"] = str(query_range[0] - 1 + alumni_covered)
-           
-            #     anchor = get_element(card, 20, EC.element_to_be_clickable, By.TAG_NAME, "a", desc="user link")[0]
-            #     if anchor:
-            #         alumnus["name"] = anchor.text
-            #         alumnus["link"] = anchor.get_attribute("href")
+        # print(len(cards)) # debug purposes
+        for card in cards:
+            alumnus = new_alumnus()
+            # keeps track of this person's position in the search parameters
+            anchor = get_element(card, 10, EC.element_to_be_clickable, By.TAG_NAME, "a", desc="user link")
+            if anchor:
+                alumnus["name"] = anchor.text
+                alumnus["link"] = anchor.get_attribute("href")
 
-            #     degrees = get_element(card, 10, EC.element_to_be_clickable, By.CLASS_NAME, "card__degrees", desc="degrees")[0]
-            #     if degrees:
-            #         alumnus["degrees"] = ",".join(degrees.text.split("\n")) 
+            degrees = get_element(card, 10, EC.element_to_be_clickable, By.CLASS_NAME, "card__degrees", desc="degrees")
+            if degrees:
+                alumnus["degrees"] = ",".join(degrees.text.split("\n")) 
 
-            #     location = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "current-location", desc="location")[0]
-            #     if location:
-            #         alumnus["location"] = location.text
+            location = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "current-location", desc="location")
+            if location:
+                alumnus["location"] = location.text
 
-            #     open_button = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "buttons", desc="email_button")[0]
-                
-            #     if open_button:  
-            #         open_button.click()
+            open_button = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "buttons", desc="email_button")
+            if open_button:  
+                open_button.click()
 
-            #         modal = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "modal", desc="form")[0]
-            #         close_button = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "close", desc="close_button")[0]
-            #         text = modal.find_element_by_tag_name("dd").text.split('<')
-            #         if close_button:
-            #             close_button.click()
-
-            #         if len(text) == 2:
-            #             email = text[1].strip(">").strip()
-            #             alumnus["email"] = email
-
-            #     alumni_batch.append( alumnus )
-            #     print(f"Alumni {alumni_covered}/{last_person} in college {college}:", [i for i in alumnus if alumnus[i] == ""])
-            #     alumni_covered += 1
-
-            #     if getsizeof(alumni_batch) > 10000:
-            #         print(f"Writing {len(alumni_batch)} to disk!")
-            #         for row in alumni_batch:
-            #             alumni_writer.writerow(row)
-            #             alumni_batch = []
-                
-            '''
-                error = "" # for debugging
-                
-                alumnus = {
-                    "name" : "",
-                    "degrees" : "",
-                    "email" : "",
-                    "location" : "",
-                    "link" : "",
-                }
-
-                # might wrap some of the error catching in order to make it more concise...
-                try:
-                    anchor = WebDriverWait(card, 20).until(EC.element_to_be_clickable((By.TAG_NAME, "a")))
-                    alumnus["name"] = anchor.text
-                    alumnus["link"] = anchor.get_attribute("href")
-
-                    degrees = WebDriverWait(card, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "card__degrees")))
+                modal = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "modal", desc="form")
+                close_button = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "close", desc="close_button")
                     
-                    
-                    alumnus["degrees"] = ";".join(degrees.text.split("\n")) 
-                    
-                    location = WebDriverWait(card, 5).until(EC.element_to_be_clickable((By.CLASS_NAME, "current-location")))
-                    alumnus["location"] = location.text #location
-
-                    open_button = WebDriverWait(card, 5).until(EC.element_to_be_clickable((By.CLASS_NAME, "buttons")))
-                    open_button.click()
-
-                    modal = None 
-                    email = None
-                    close_button = None
-
-                    modal = WebDriverWait(driver, 20).until(
-                            EC.element_to_be_clickable((By.CLASS_NAME, "modal")))
-                    close_button = WebDriverWait(modal, 20).until(
-                        EC.element_to_be_clickable((By.CLASS_NAME, "close")))
+                text = None
+                if modal:
                     text = modal.find_element_by_tag_name("dd").text.split('<')
-                   
+
+                if close_button:
                     close_button.click()
 
+                if text:
                     if len(text) == 2:
                         email = text[1].strip(">").strip()
                         alumnus["email"] = email
-                except TimeoutException:
-                    error += "element took too long, "
-                except ElementClickInterceptedException:
-                    error += "something blocks element"
-                except ElementNotInteractableException:
-                    error += "element doesn't seem to work"
-                finally:
-                    if error != "":
-                        error += str(alumnus)
 
-                    alumni_batch.append( alumnus )
-                    print(f"Alumni {alumni_covered}/{last_person} in college {college}:", error)
-                    alumni_covered += 1
-                
-            if getsizeof(alumni_batch) > 10000:
-                print(f"Writing {len(alumni_batch)} to disk!")
-                for row in alumni_batch:
-                    alumni_writer.writerow(row)
-                    alumni_batch = []
-            '''
-        
-        except UnexpectedAlertPresentException:
-            print(
-                "Session might be logged out. Try resaving cookies and start script again.")
-            driver.close()
-            break
+            alumni_batch.append( alumnus )
+            print(f"{len(alumni_batch)}/50 Alumni in batch starting at {query_start} in college \"{college}\": parameters visible", [i for i in alumnus if alumnus[i] != ""])
+    except UnexpectedAlertPresentException:
+        print("Session might be logged out. Try resaving cookies and start script again.")
+        driver.close()
     
     
     driver.close()
-
-
-    
-    # for row in alumni_batch:
-    #     print(f"Writing {len(alumni_batch)} to disk!")
-    #     alumni_writer.writerow(row)
-    #     alumni_batch = []
+    print(f"Writing {len(alumni_batch)} to disk!")
+    for row in alumni_batch:
+        alumni_writer.writerow(row)
+        alumni_batch = []
     
         
-    # alumni_file.close()
+    alumni_file.close()
     
 
 parser = argparse.ArgumentParser(description='Determine specifics of how to run the script.')
 parser.add_argument('-f', '--filename', type=str, help='File name of CSV to save to', default="alumni.csv")
 parser.add_argument('-c', '--college', type=str, help='Query tab to end at. Is inclusive', default="harvard college")
 parser.add_argument("query_start", type=int, help='Query tab to start at')
-parser.add_argument("query_end", type=int, help='Query tab to end at')
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    interval = range(args.query_start, args.query_end + 1, 50) # guarantees an inclusive range
-    scrape(interval, college=args.college, filename=args.filename)
+    print(args)
+    scrape(args.query_start, college=args.college, filename=args.filename)
     
 
     

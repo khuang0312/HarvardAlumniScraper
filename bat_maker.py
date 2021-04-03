@@ -15,7 +15,7 @@ def make_batch_commands(batch_file, filename:str, school:str, start=0, end=50):
     '''    
     batch = 1
     for i in range(start, end + 1, 50):
-        batch_file.write( f"python scrape.py -f \"{filename}{batch}.csv\" -c \"{school}\" {i} {i + 50}\n"  )
+        batch_file.write( f"python scrape.py -f \"{filename}{batch}.csv\" -c \"{school}\" {i}\n"  )
         batch += 1
 
 if __name__ == '__main__':
