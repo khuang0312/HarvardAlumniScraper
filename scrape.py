@@ -1,6 +1,6 @@
 # Original work done by Sally Matson
 # Minor changes made by Emily Dich
-# Overhauled by Kevin Huang
+# Massively overhauled by Kevin Huang
 # Last modified: 4/2/2021
 
 from selenium import webdriver
@@ -35,7 +35,7 @@ def handle_element_error(element_getter):
             print(type(e), desc)
         except ElementClickInterceptedException as e:
             print(type(e), desc)
-        except ElementNotInteractableException:
+        except ElementNotInteractableException as e:
             print(type(e), desc)
         finally:
             # if we need the desc after... # return element, desc
@@ -76,12 +76,19 @@ def scrape(query_start, college="harvard college", filename="alumni_emails.csv")
     driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get("https://community.alumni.harvard.edu")
 
-    # resetting cookies: uncomment line below (line 29) and comment out following instructions on line 31 
-    # input("Hold to save stuff to disk")
+    # UNCOMMENT THE CODE IN THIS SECTION TO RESET COOKIES
+    # login failures means you need to reset cookies
+    # if you need to reset cookies, uncomment the lines
+    # once you double checked cookies.pkl is no longer empty, re-comment the chunk, then rerun code
+    
+    # input("\n\nType something to save stuff to disk\n\n")
     # pickle.dump( driver.get_cookies() , open("cookies.pkl","wb"))
+    # driver.close()
+    # return
+    
+    # CODE TO RESET COOKIES ENDS HERE
 
-    #if you need to reset cookies, comment out chunk: line starting below with 'cookies' (#32) until line 76 (right before 'driver.close()')
-    # once you double checked cookies.pkl is no longer empty, uncomment the chunk and comment out line 29 then re run script! 
+    
     cookies=pickle.load(open("cookies.pkl", "rb"))
     for cookie in cookies:
         driver.add_cookie(cookie)
@@ -108,6 +115,11 @@ def scrape(query_start, college="harvard college", filename="alumni_emails.csv")
             
         card_xpath = "//*[@class='col-xs-20 visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block outer-person-card']"
         cards = get_element(driver, 2, EC.visibility_of_all_elements_located, By.XPATH, card_xpath, desc="profile_cards")
+
+        if cards == None:
+            driver.close()
+            print(f"Cards didn't render for page starting at {query_start}")
+            return
             
         # print(len(cards)) # debug purposes
         for card in cards:
@@ -127,23 +139,28 @@ def scrape(query_start, college="harvard college", filename="alumni_emails.csv")
                 alumnus["location"] = location.text
 
             open_button = get_element(card, 5, EC.element_to_be_clickable, By.CLASS_NAME, "buttons", desc="email_button")
-            if open_button:  
-                open_button.click()
+            if open_button:
+                try:
+                    open_button.click()
+                except ElementNotInteractableException as e:
+                    print(open_button, e)
+                except ElementClickInterceptedException as e:
+                    print(open_button, e)
+                else:
+                    modal = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "modal", desc="form")
+                    close_button = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "close", desc="close_button")
+                        
+                    text = None
+                    if modal:
+                        text = modal.find_element_by_tag_name("dd").text.split('<')
 
-                modal = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "modal", desc="form")
-                close_button = get_element(driver, 20, EC.element_to_be_clickable, By.CLASS_NAME, "close", desc="close_button")
-                    
-                text = None
-                if modal:
-                    text = modal.find_element_by_tag_name("dd").text.split('<')
+                    if close_button:
+                        close_button.click()
 
-                if close_button:
-                    close_button.click()
-
-                if text:
-                    if len(text) == 2:
-                        email = text[1].strip(">").strip()
-                        alumnus["email"] = email
+                    if text:
+                        if len(text) == 2:
+                            email = text[1].strip(">").strip()
+                            alumnus["email"] = email
 
             alumni_batch.append( alumnus )
             print(f"{len(alumni_batch)}/50 Alumni in batch starting at {query_start} in college \"{college}\": parameters visible", [i for i in alumnus if alumnus[i] != ""])
@@ -161,7 +178,7 @@ def scrape(query_start, college="harvard college", filename="alumni_emails.csv")
         
     alumni_file.close()
     
-
+# Parser prompt code
 parser = argparse.ArgumentParser(description='Determine specifics of how to run the script.')
 parser.add_argument('-f', '--filename', type=str, help='File name of CSV to save to', default="alumni.csv")
 parser.add_argument('-c', '--college', type=str, help='Query tab to end at. Is inclusive', default="harvard college")

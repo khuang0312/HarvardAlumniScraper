@@ -1,9 +1,0 @@
-# give credit to Emily Dich, "original coder" (ask Nathan)
-# write readme describing how it works and demonstrating how to set up and use it...
-# clean up code
-# change status print outs
-
-
-
-# exporting the damn thing...
-https://medium.com/featurepreneu r/install-python-packages-pip-and-requirements-txt-652cd5e335

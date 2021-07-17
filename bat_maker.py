@@ -19,6 +19,12 @@ def make_batch_commands(batch_file, filename:str, school:str, start=0, end=50):
         batch += 1
 
 if __name__ == '__main__':
+    # schools maps the names of each graduate school to the numbers of start page and the final page
+    # the way the directory is organized that each result page at most stores 50 alumni
+    # the url is organized like ?start=0, meaning that students 0 to 50 are on that page
+
+    # the starting numbers are picked because we found that the alumni at the time we scraped
+    # start on different pages depending on the school.
     schools = {
         "general" : ["general_alumni", "harvard college", 0, 96800],
         "kennedy" : ["kennedy", "harvard kennedy school", 1050, 41500],
