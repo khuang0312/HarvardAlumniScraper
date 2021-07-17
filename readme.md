@@ -17,9 +17,9 @@ The scraper probably won't work anymore if they have done any restructuring of s
 This scraper definitely could benefit from some multithreading. There were so many pages that I had to had multiple terminal running multiple instances of this scraper. There might have been a way to not use Selenium as well. At least to some extent.
 
 ## What I Did/Learned
-Kevin Huang - made massive overhauls
-Emily Dich - made minor tweaks
-Sally Matson - original developer
+* Kevin Huang - made massive overhauls
+* Emily Dich - made minor tweaks
+* Sally Matson - original developer
 
 So originally, this scraper was written by Sally. Her original work couldn't collect the emails from the modal forms and also didn't seem to work very well for most profiles. Emily added some convenience features: installing the Selenium web driver--the browser isntance that does the scraping--and setting up the cookie reset. I made major tweaks: the addition of scraping of emails from modal forms, another module for automating the scraper, far more sophisticated error handling that prevents the scraper from dropping entire entries, significantly increased efficiency by processing the directory in batches instead of person-by-person, and more detailed comments and readable code.
 
