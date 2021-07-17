@@ -16,7 +16,7 @@ The scraper probably won't work anymore if they have done any restructuring of s
 ## Reflections
 This scraper definitely could benefit from some multithreading. There were so many pages that I had to had multiple terminal running multiple instances of this scraper. There might have been a way to not use Selenium as well. At least to some extent.
 
-## What I Learned.
+## What I Learned
 * Selenium
 * Web scraping (website security measures like CSRF)
 * Basic batch scripting (Windows)
