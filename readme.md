@@ -2,7 +2,7 @@
 ## Summary
 During my time working for Harvard Forward (2021 season), a nonprofit seeking to elect progressive alumni to the Harvard Board of Overseers, I was provided an existing scraper to tweak. I ended up doing a massive overhaul of the scraper.
 
-The scraper probably won't work anymore if they have done any restructuring of site elements. However, I think the code is an good example of using Selenium to gather data from a website.
+The scraper probably won't work anymore if they have done any restructuring of site elements. However, I think the code is an good example of using Selenium to gather data from a website. I was able to scrape hundreds of pages containing over 96,000 alumni using this program.
 
 ## Setup
 * Set up a venv (virtual environment) using Python 3.8.
