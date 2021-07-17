@@ -21,7 +21,7 @@ This scraper definitely could benefit from some multithreading. There were so ma
 * Emily Dich - made minor tweaks
 * Sally Matson - original developer
 
-So originally, this scraper was written by Sally. Her original work couldn't collect the emails from the modal forms and also didn't seem to work very well for most profiles. Emily added some convenience features: installing the Selenium web driver--the browser isntance that does the scraping--and setting up the cookie reset. I made major tweaks: the addition of scraping of emails from modal forms, another module for automating the scraper, far more sophisticated error handling that prevents the scraper from dropping entire entries, significantly increased efficiency by processing the directory in batches instead of person-by-person, and more detailed comments and readable code.
+So originally, this scraper was written by Sally. Her original work couldn't collect the emails from the modal forms and also didn't seem to work very well for most profiles. Emily added some convenience features: installing the Selenium web driver--the browser instance that does the scraping--and setting up the cookie reset. I made major tweaks: the addition of scraping of emails from modal forms, another module for automating the scraper, far more sophisticated error handling that prevents the scraper from dropping entire entries, significantly increased efficiency by processing the directory in batches instead of person-by-person, and more detailed comments and readable code.
 
 * Selenium
 * Web scraping (website security measures like CSRF)
